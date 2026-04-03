@@ -70,6 +70,7 @@ from open_webui.socket.main import (
 )
 from open_webui.routers import (
     analytics,
+    api_logs,
     audio,
     images,
     ollama,
@@ -1520,6 +1521,7 @@ app.include_router(functions.router, prefix='/api/v1/functions', tags=['function
 app.include_router(evaluations.router, prefix='/api/v1/evaluations', tags=['evaluations'])
 if ENABLE_ADMIN_ANALYTICS:
     app.include_router(analytics.router, prefix='/api/v1/analytics', tags=['analytics'])
+    app.include_router(api_logs.router, prefix='/api/v1/api-logs', tags=['api-logs'])
 app.include_router(utils.router, prefix='/api/v1/utils', tags=['utils'])
 app.include_router(terminals.router, prefix='/api/v1/terminals', tags=['terminals'])
 

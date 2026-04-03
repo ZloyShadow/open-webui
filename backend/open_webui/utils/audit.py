@@ -12,6 +12,8 @@ from typing import (
     cast,
 )
 import uuid
+import time
+import json
 
 from asgiref.typing import (
     ASGI3Application,
@@ -27,6 +29,8 @@ from starlette.requests import Request
 from open_webui.env import AUDIT_LOG_LEVEL, AUDIT_INCLUDED_PATHS, MAX_BODY_LOG_SIZE
 from open_webui.utils.auth import get_current_user, get_http_authorization_cred
 from open_webui.models.users import UserModel
+from open_webui.models.api_request_logs import ApiRequestLogs
+from open_webui.internal.db import get_session
 
 if TYPE_CHECKING:
     from loguru import Logger
@@ -251,7 +255,7 @@ class AuditLoggingMiddleware:
         try:
             user = await self._get_authenticated_user(request)
 
-            user = user.model_dump(include={'id', 'name', 'email', 'role'}) if user else {}
+            user_dict = user.model_dump(include={'id', 'name', 'email', 'role'}) if user else {}
 
             request_body = context.request_body.decode('utf-8', errors='replace')
             response_body = context.response_body.decode('utf-8', errors='replace')
@@ -266,7 +270,7 @@ class AuditLoggingMiddleware:
 
             entry = AuditLogEntry(
                 id=str(uuid.uuid4()),
-                user=user,
+                user=user_dict,
                 audit_level=self.audit_level.value,
                 verb=request.method,
                 request_uri=str(request.url),
@@ -278,5 +282,47 @@ class AuditLoggingMiddleware:
             )
 
             self.audit_logger.write(entry)
+            
+            # Also save to database for API request logs
+            try:
+                from urllib.parse import urlparse, parse_qs
+                
+                parsed_url = urlparse(str(request.url))
+                query_params = parse_qs(parsed_url.query)
+                
+                # Parse request/response bodies as JSON if possible
+                try:
+                    req_body_json = json.loads(request_body) if request_body else None
+                except json.JSONDecodeError:
+                    req_body_json = {'raw': request_body} if request_body else None
+                
+                try:
+                    resp_body_json = json.loads(response_body) if response_body else None
+                except json.JSONDecodeError:
+                    resp_body_json = {'raw': response_body} if response_body else None
+                
+                log_data = {
+                    'id': str(uuid.uuid4()),
+                    'user_id': user_dict.get('id'),
+                    'user_email': user_dict.get('email'),
+                    'user_name': user_dict.get('name'),
+                    'method': request.method,
+                    'path': parsed_url.path,
+                    'query_params': query_params,
+                    'request_body': req_body_json,
+                    'request_headers': dict(request.headers),
+                    'response_status_code': context.metadata.get('response_status_code'),
+                    'response_body': resp_body_json,
+                    'source_ip': request.client.host if request.client else None,
+                    'user_agent': request.headers.get('user-agent'),
+                    'duration_ms': context.metadata.get('duration_ms'),
+                    'created_at': int(time.time()),
+                }
+                
+                with get_session() as db:
+                    ApiRequestLogs.insert_log(log_data, db=db)
+            except Exception as db_error:
+                logger.debug(f'Failed to save API request log to database: {str(db_error)}')
+                
         except Exception as e:
             logger.error(f'Failed to log audit entry: {str(e)}')
