@@ -210,15 +210,15 @@
 </svelte:head>
 
 <div class="container mx-auto p-6">
-  <h1 class="text-3xl font-bold mb-6">Security Policies Management</h1>
+  <h1 class="text-3xl font-bold mb-6" data-testid="security-title">Security Policies Management</h1>
 
   {#if loading}
-    <div class="flex justify-center items-center py-12">
+    <div class="flex justify-center items-center py-12" data-testid="loading-spinner">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   {:else}
     <!-- User ID Input -->
-    <div class="mb-6 bg-white rounded-lg shadow p-4">
+    <div class="mb-6 bg-white rounded-lg shadow p-4" data-testid="user-id-section">
       <label class="block text-sm font-medium text-gray-700 mb-2">
         User ID
       </label>
@@ -226,11 +226,13 @@
         <input
           type="number"
           bind:value={userId}
+          data-testid="user-id-input"
           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter user ID"
         />
         <button
           on:click={() => { loading = true; loadPolicy(); loadStopWords(); loadAlerts(); loading = false; }}
+          data-testid="load-button"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
         >
           Load
@@ -239,7 +241,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="mb-6 border-b border-gray-200">
+    <div class="mb-6 border-b border-gray-200" data-testid="tabs-container">
       <nav class="-mb-px flex space-x-8">
         <button
           class:active={activeTab === 'policy'}
@@ -249,6 +251,7 @@
           class:border-transparent={activeTab !== 'policy'}
           class:text-gray-500={activeTab !== 'policy'}
           on:click={() => activeTab = 'policy'}
+          data-testid="tab-policy"
         >
           Policy Settings
         </button>
@@ -260,6 +263,7 @@
           class:border-transparent={activeTab !== 'stopwords'}
           class:text-gray-500={activeTab !== 'stopwords'}
           on:click={() => activeTab = 'stopwords'}
+          data-testid="tab-stopwords"
         >
           Stop Words ({stopWords.length})
         </button>
@@ -271,6 +275,7 @@
           class:border-transparent={activeTab !== 'alerts'}
           class:text-gray-500={activeTab !== 'alerts'}
           on:click={() => activeTab = 'alerts'}
+          data-testid="tab-alerts"
         >
           Security Alerts ({alerts.length})
         </button>
@@ -391,10 +396,10 @@
 
     <!-- Stop Words Tab -->
     {#if activeTab === 'stopwords'}
-      <div class="space-y-6">
+      <div class="space-y-6" data-testid="stopwords-section">
         <!-- Add Stop Word Form -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-4">Add Stop Word</h2>
+        <div class="bg-white rounded-lg shadow p-6" data-testid="add-stopword-form">
+          <h2 class="text-xl font-semibold mb-4" data-testid="stopwords-title">Add Stop Word</h2>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -404,6 +409,7 @@
               <input
                 type="text"
                 bind:value={stopWordForm.word}
+                data-testid="stopword-word-input"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter stop word or regex pattern"
               />
@@ -415,6 +421,7 @@
               </label>
               <select
                 bind:value={stopWordForm.check_type}
+                data-testid="stopword-type-select"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="contains">Contains</option>
@@ -556,19 +563,19 @@
 
     <!-- Alerts Tab -->
     {#if activeTab === 'alerts'}
-      <div class="bg-white rounded-lg shadow">
+      <div class="bg-white rounded-lg shadow" data-testid="alerts-section">
         <div class="p-6 border-b">
-          <h2 class="text-xl font-semibold">Security Alerts History</h2>
+          <h2 class="text-xl font-semibold" data-testid="alerts-title">Security Alerts History</h2>
           <p class="text-sm text-gray-500 mt-1">Last 50 alerts for this user</p>
         </div>
         
         {#if alerts.length === 0}
-          <div class="p-6 text-center text-gray-500">
+          <div class="p-6 text-center text-gray-500" data-testid="no-alerts-message">
             No security alerts recorded yet.
           </div>
         {:else}
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+          <div class="overflow-x-auto" data-testid="alerts-table-container">
+            <table class="min-w-full divide-y divide-gray-200" data-testid="alerts-table">
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
